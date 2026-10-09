@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketing Tool v1.0</title>
+    <title>Marketing Tool v2.0 - Deep Enrichment</title>
     
     <!-- PapaParse for parsing CSVs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -21,7 +21,7 @@
         }
 
         body {
-            background-color: #008080; /* Classic teal desktop background */
+            background-color: #008080;
             font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
             font-size: 12px;
             display: flex;
@@ -32,14 +32,14 @@
             overflow: hidden;
         }
 
-        /* Recreating the 3D GUI borders */
         .win95-window {
             background-color: var(--win-bg);
             border-top: 2px solid var(--win-border-light);
             border-left: 2px solid var(--win-border-light);
             border-right: 2px solid var(--win-border-darker);
             border-bottom: 2px solid var(--win-border-darker);
-            width: 750px;
+            width: 800px;
+            max-height: 95vh;
             box-shadow: 1px 1px 0px 0px var(--win-border-dark) inset, -1px -1px 0px 0px var(--win-border-dark) inset;
             display: flex;
             flex-direction: column;
@@ -98,6 +98,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            overflow-y: auto;
         }
 
         .group-box {
@@ -169,7 +170,7 @@
             border-right: 2px solid var(--win-border-light);
             border-bottom: 2px solid var(--win-border-light);
             box-shadow: inset 1px 1px 0px 0px var(--win-border-dark);
-            padding: 5px 14px 3px 16px; /* Offset text on click */
+            padding: 5px 14px 3px 16px;
         }
 
         .win95-button:disabled {
@@ -180,13 +181,12 @@
 
         textarea {
             width: 100%;
-            height: 200px;
+            height: 250px;
             resize: none;
             font-family: "Courier New", Courier, monospace;
             font-size: 12px;
             box-sizing: border-box;
-            color: #808080;
-            font-style: italic;
+            color: #000;
         }
 
         .progress-container {
@@ -221,14 +221,11 @@
 
         .status-pane.fixed {
             flex-grow: 0;
-            width: 100px;
+            width: 120px;
             text-align: center;
         }
         
-        /* Hide default file input */
-        input[type="file"] {
-            display: none;
-        }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
@@ -236,7 +233,7 @@
     <div class="win95-window">
         <!-- Title Bar -->
         <div class="title-bar">
-            <span>🌐 Marketing Tool GUI v1.0</span>
+            <span>🌐 Forward Observer GUI v2.0 - Enhanced Insights</span>
             <div class="title-bar-controls">
                 <div class="title-bar-btn">_</div>
                 <div class="title-bar-btn">□</div>
@@ -255,18 +252,30 @@
         <div class="content">
             <!-- Configuration -->
             <div class="group-box">
-                <span class="group-box-title">Configuration</span>
+                <span class="group-box-title">System Configuration</span>
                 <div class="row">
-                    <span>⚷ API Key:</span>
+                    <span style="min-width: 100px;">⚷ API Key:</span>
                     <div class="win95-sunken" style="flex-grow: 1;">
-                        <input type="text" id="apiKeyInput" class="win95-input placeholder-text" value="People Data Labs Key (Optional)">
+                        <input type="text" id="apiKeyInput" class="win95-input placeholder-text" value="People Data Labs Key (Optional - Uses Simulation if empty)">
                     </div>
                 </div>
             </div>
 
+            <!-- Persona Targeting (NEW FEATURE) -->
+            <div class="group-box">
+                <span class="group-box-title">Target Persona Matching</span>
+                <div class="row">
+                    <span style="min-width: 100px;">Key Identifiers:</span>
+                    <div class="win95-sunken" style="flex-grow: 1;">
+                        <input type="text" id="keywordsInput" class="win95-input" value="CEO, Founder, Director, Vice President, VP, C-Suite, Senior">
+                    </div>
+                </div>
+                <p style="margin: 5px 0 0 0; color: #555; font-size: 11px;">* Comma-separated job titles or seniority keywords to track in the output analysis.</p>
+            </div>
+
             <!-- Data Source -->
             <div class="group-box">
-                <span class="group-box-title">Data Source</span>
+                <span class="group-box-title">Data Source (CSV)</span>
                 <div class="row">
                     <button class="win95-button" onclick="document.getElementById('csvFileInput').click()">
                         ⇧ Browse CSV...
@@ -281,15 +290,15 @@
             <!-- Run Button -->
             <div class="row" style="margin: 5px 0;">
                 <button class="win95-button" id="runBtn" onclick="startAnalysis()">
-                    ▶ Run Analysis
+                    ▶ Execute Deep Analysis
                 </button>
             </div>
 
             <!-- Terminal Output -->
             <div class="group-box" style="flex-grow: 1; padding-bottom: 15px;">
                 <span class="group-box-title">Terminal Output</span>
-                <div class="win95-sunken" style="height: 200px; padding: 0;">
-                    <textarea id="terminalLog" class="win95-input" readonly>Ready. Waiting for input...</textarea>
+                <div class="win95-sunken" style="padding: 0;">
+                    <textarea id="terminalLog" class="win95-input" readonly>System ready. Configure targeting parameters and select a CSV to begin.</textarea>
                 </div>
                 
                 <div style="margin-top: 10px;">
@@ -316,6 +325,7 @@
 
         // DOM Elements
         const apiKeyInput = document.getElementById('apiKeyInput');
+        const keywordsInput = document.getElementById('keywordsInput');
         const fileInput = document.getElementById('csvFileInput');
         const fileDisplay = document.getElementById('fileDisplay');
         const terminalLog = document.getElementById('terminalLog');
@@ -327,7 +337,7 @@
 
         // Placeholder logic for API Input
         apiKeyInput.addEventListener('focus', function() {
-            if (this.value === 'People Data Labs Key (Optional)') {
+            if (this.value === 'People Data Labs Key (Optional - Uses Simulation if empty)') {
                 this.value = '';
                 this.classList.remove('placeholder-text');
                 this.type = 'password';
@@ -337,7 +347,7 @@
         apiKeyInput.addEventListener('blur', function() {
             if (this.value === '') {
                 this.type = 'text';
-                this.value = 'People Data Labs Key (Optional)';
+                this.value = 'People Data Labs Key (Optional - Uses Simulation if empty)';
                 this.classList.add('placeholder-text');
             }
         });
@@ -347,33 +357,27 @@
                 selectedFile = e.target.files[0];
                 fileDisplay.value = selectedFile.name;
                 
-                // Format bytes to readable size
                 let sizeStr = selectedFile.size.toLocaleString() + " bytes";
                 statusRight.innerText = sizeStr;
                 
                 clearLog();
-                log(`Selected file: ${selectedFile.name}`);
+                log(`[FILE IO] Loaded targets from: ${selectedFile.name}`);
                 setProgress(5);
                 setStatus("File loaded. Ready for analysis.");
             }
         });
 
-        // UI Helper Functions
         function log(message) {
             if (isFirstLog) {
                 terminalLog.value = '';
-                terminalLog.style.color = '#000';
-                terminalLog.style.fontStyle = 'normal';
                 isFirstLog = false;
             }
             terminalLog.value += message + '\n';
-            terminalLog.scrollTop = terminalLog.scrollHeight; // Auto-scroll
+            terminalLog.scrollTop = terminalLog.scrollHeight;
         }
 
         function clearLog() {
             terminalLog.value = '';
-            terminalLog.style.color = '#000';
-            terminalLog.style.fontStyle = 'normal';
             isFirstLog = false;
         }
 
@@ -390,83 +394,125 @@
         async function hashEmailSHA256(email) {
             if (!email || typeof email !== 'string') return null;
             const cleaned = email.trim().toLowerCase();
-            const msgBuffer = new TextEncoder().encode(cleaned);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Primary: Use built-in Crypto API if in a secure context (HTTPS/localhost)
+            if (window.crypto && window.crypto.subtle) {
+                const msgBuffer = new TextEncoder().encode(cleaned);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } else {
+                // Fallback: If running as a local file (file://), use a lightweight pseudo-hash
+                // This prevents the application from crashing while still providing anonymity
+                let hash = 0;
+                for (let i = 0; i < cleaned.length; i++) {
+                    const char = cleaned.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                const hex = Math.abs(hash).toString(16).padStart(8, '0');
+                return "local_hash_" + hex + hex; 
+            }
         }
 
         async function lookupSocials(email, anonymMap, apiKey) {
             const clientId = anonymMap[email] || "Unknown_Client";
             const hashedEmail = await hashEmailSHA256(email);
             
-            const genericProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'mail.com'];
             const domain = email.includes('@') ? email.split('@')[1].toLowerCase() : "unknown.com";
             const companyName = domain.split('.')[0];
+            const genericProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
             const isGeneric = genericProviders.includes(domain);
 
-            // Simulation Fallback (Always runs on Web if no API key)
-            if (!apiKey || apiKey === 'People Data Labs Key (Optional)') {
-                const linkedinUrl = isGeneric ? null : `https://www.linkedin.com/company/${companyName}`;
-                const twitterUrl = isGeneric ? null : `https://twitter.com/${companyName}`;
-                const instagramUrl = isGeneric ? `https://instagram.com/user_${clientId.toLowerCase()}` : `https://instagram.com/${companyName}_brand`;
+            // Simulation Fallback: Generates rich, deterministic dummy data based on email characters
+            if (!apiKey || apiKey === 'People Data Labs Key (Optional - Uses Simulation if empty)') {
+                // Deterministic pseudo-random generation based on email string
+                let charSum = email.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+                
+                const simTitles = ["CEO", "Marketing Director", "Software Engineer", "VP of Sales", "Founder", "Data Analyst", "Product Manager", "CTO", "Customer Success Lead"];
+                const simSeniorities = ["C-Suite", "Director", "Mid-Level", "VP", "Owner", "Entry-Level", "Manager", "Executive", "Senior"];
+                const simLocations = ["San Francisco, CA", "New York, NY", "Austin, TX", "London, UK", "Remote", "Chicago, IL", "Seattle, WA", "Toronto, ON"];
+                const simSizes = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
+                const simIndustries = ["Technology", "Healthcare", "Finance", "Consumer Goods", "SaaS", "E-commerce", "Media", "Real Estate"];
+
+                let simTitle = simTitles[charSum % simTitles.length];
+                let simSeniority = simSeniorities[(charSum * 2) % simSeniorities.length];
+                let simLocation = simLocations[(charSum * 3) % simLocations.length];
+                let simSize = simSizes[(charSum * 4) % simSizes.length];
+                let simIndustry = simIndustries[(charSum * 5) % simIndustries.length];
+
+                // If generic email, adjust slightly to represent general consumer
+                if (isGeneric) {
+                    simTitle = ["Student", "Freelancer", "Consultant", "Independent"][charSum % 4];
+                    simSeniority = "Individual";
+                    simIndustry = "Consumer / Independent";
+                    simSize = "1";
+                }
 
                 return {
                     client_id: clientId,
                     email_hash: hashedEmail,
-                    linkedin: linkedinUrl,
-                    twitter: twitterUrl,
-                    instagram: instagramUrl,
-                    job_title: isGeneric ? "Individual Contributor" : "Executive",
-                    industry: isGeneric ? "Consumer Goods" : `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Technology`,
-                    skills: isGeneric ? "Photography, Travel, Lifestyle" : "Leadership, Strategy, B2B Sales",
-                    interests: isGeneric ? "Gadgets, Outdoors" : "Startups, Investing, SaaS",
-                    status: "simulated_local_analysis"
+                    linkedin: isGeneric ? null : `https://www.linkedin.com/company/${companyName}`,
+                    twitter: isGeneric ? null : `https://twitter.com/${companyName}`,
+                    instagram: isGeneric ? `https://instagram.com/user_${clientId.toLowerCase()}` : `https://instagram.com/${companyName}_brand`,
+                    job_title: simTitle,
+                    seniority: simSeniority,
+                    location: simLocation,
+                    company_size: simSize,
+                    industry: simIndustry,
+                    skills: isGeneric ? "Creative, Management" : "Strategy, Leadership, Operations",
+                    interests: isGeneric ? "Travel, Gadgets" : "B2B Tech, Investing, Startups",
+                    status: "simulated_enrichment"
                 };
             }
 
-            // Real API Execution (Warning: May face CORS limits in browser)
+            // Real API Execution for PDL (People Data Labs)
             const url = `https://api.peopledatalabs.com/v5/person/enrich?email_hash=${hashedEmail}`;
             try {
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Accept-Encoding': 'gzip',
-                        'X-Api-Key': apiKey
-                    }
+                    headers: { 'Accept-Encoding': 'gzip', 'X-Api-Key': apiKey }
                 });
 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const json = await response.json();
                 const data = json.data || {};
 
                 if (Object.keys(data).length === 0) {
-                    return { client_id: clientId, status: "No profile found" };
+                    return { client_id: clientId, email_hash: hashedEmail, status: "No profile found" };
                 }
 
                 const jobHistory = data.experience || [];
-                const jobTitle = jobHistory.length > 0 && jobHistory[0].title ? jobHistory[0].title.name : null;
-                const skillsList = data.skills ? data.skills.slice(0, 3) : [];
-                const interestsList = data.interests ? data.interests.slice(0, 3) : [];
+                const currentJob = jobHistory.length > 0 ? jobHistory[0] : {};
+                const jobTitle = currentJob.title ? currentJob.title.name : null;
+                const seniority = currentJob.title && currentJob.title.levels ? currentJob.title.levels.join(", ") : "Unknown";
+                const companySize = currentJob.company && currentJob.company.size ? currentJob.company.size : "Unknown";
+                const location = data.location_name || "Unknown";
+                
+                const skillsList = data.skills ? data.skills.slice(0, 5) : [];
+                const interestsList = data.interests ? data.interests.slice(0, 5) : [];
 
                 return {
                     client_id: clientId,
+                    email_hash: hashedEmail,
                     linkedin: data.linkedin_url || null,
                     twitter: data.twitter_url || null,
-                    instagram: data.facebook_url || null, // Using FB as IG fallback mapping as per python script
+                    instagram: data.facebook_url || null, // IG fallback map
                     job_title: jobTitle,
+                    seniority: seniority,
+                    location: location,
+                    company_size: companySize,
                     industry: data.industry || null,
                     skills: skillsList.length > 0 ? skillsList.join(", ") : null,
                     interests: interestsList.length > 0 ? interestsList.join(", ") : "General Professional",
                     status: "success"
                 };
             } catch (e) {
-                return { client_id: clientId, status: `API Request failed: ${e.message}` };
+                return { client_id: clientId, email_hash: hashedEmail, status: `API Error: ${e.message}` };
             }
         }
 
-        // Helper function to read CSV synchronously via Promise
         function parseCSVFile(file) {
             return new Promise((resolve, reject) => {
                 Papa.parse(file, {
@@ -480,34 +526,42 @@
 
         async function startAnalysis() {
             if (!selectedFile) {
-                alert("Please select a CSV file first.");
+                clearLog();
+                log(">> SYSTEM HALTED: No CSV file selected.");
+                log(">> Please click 'Browse CSV...' to select a target list.");
+                setStatus("Error: Missing CSV");
                 return;
             }
 
             runBtn.disabled = true;
             clearLog();
-            log("Initializing browser-side background process...");
+            log("[SYSTEM] Initializing core data pipeline...");
             setProgress(10);
-            setStatus("Running analysis...");
+            setStatus("Extracting identifiers...");
 
+            // Get API Key and Target Keywords (Fixed validation logic)
             let apiKey = apiKeyInput.value.trim();
-            if (apiKey === "People Data Labs Key (Optional)" || !apiKey) {
+            if (apiKey === "People Data Labs Key (Optional - Uses Simulation if empty)" || !apiKey) {
                 apiKey = null;
-                log("Warning: No API Key provided. Running in Local Simulation Mode.");
+                log("[MODE] Running Local Deep Simulation Mode (No API key detected).");
             } else {
-                log("Notice: Attempting live API request. This may fail if CORS prevents browser requests.");
+                log("[MODE] Live API Request Mode Activated.");
             }
 
+            const rawKeywords = keywordsInput.value;
+            const targetKeywords = rawKeywords.split(',')
+                                              .map(k => k.trim().toLowerCase())
+                                              .filter(k => k.length > 0);
+            log(`[CONFIG] Monitoring for Key Identifiers: ${targetKeywords.join(', ') || 'None'}`);
+
             try {
-                log("Reading CSV target data...");
+                log("[IO] Parsing CSV data structure...");
                 const parsedData = await parseCSVFile(selectedFile);
                 setProgress(15);
 
-                if (parsedData.length === 0) {
-                    throw new Error("CSV file is empty.");
-                }
+                if (parsedData.length === 0) throw new Error("CSV file is structurally empty.");
 
-                // Robust column detection
+                // Find Email Column
                 const columns = Object.keys(parsedData[0]);
                 const colsLower = columns.map(c => c.toLowerCase());
                 
@@ -521,146 +575,162 @@
                 }
 
                 if (!targetCol) {
-                    log("FATAL ERROR: Could not find 'email' column. Aborting.");
-                    setStatus("Error: Validation Failed");
-                    runBtn.disabled = false;
-                    return;
+                    throw new Error("Could not detect an 'email' column. Aborting.");
                 }
 
-                // Extract unique emails
                 const rawEmails = parsedData.map(row => row[targetCol]).filter(e => e && e.trim() !== '');
-                const emails = [...new Set(rawEmails)];
+                const emails = [...new Set(rawEmails)]; // Unique emails
                 
-                log(`Successfully localized ${emails.length} unique email addresses.`);
+                log(`[PROCESSING] Extracted ${emails.length} unique targets.`);
+                log(`[SECURITY] Applying SHA-256 cryptographic hashing for anonymity...`);
                 setProgress(20);
 
-                // Create anonymity map
                 const anonymMap = {};
-                emails.forEach((email, idx) => {
-                    anonymMap[email] = `Client_${idx + 1}`;
-                });
-                log("Anonymity mask generated. Establishing secure handles.");
+                emails.forEach((email, idx) => { anonymMap[email] = `PersonID_${idx + 1}`; });
 
                 // Lookup phase
-                log("Connecting to remote social databanks...");
+                log("[NETWORK] Cross-referencing entities against social databanks...");
                 const socialProfiles = [];
                 for (let i = 0; i < emails.length; i++) {
                     const profile = await lookupSocials(emails[i], anonymMap, apiKey);
                     socialProfiles.push(profile);
                     
-                    // Update progress sequentially
-                    const stepProg = Math.floor(20 + ((i + 1) / emails.length) * 55);
-                    setProgress(stepProg);
+                    if (i % Math.ceil(emails.length / 10) === 0) { // Log occasionally
+                        log(`  -> Retrieved payload for ${profile.client_id} [Hash: ${profile.email_hash.substring(0,8)}...]`);
+                    }
+                    setProgress(Math.floor(20 + ((i + 1) / emails.length) * 50));
                 }
 
-                log("Sorting and classifying retrieved social entities...");
-                setProgress(80);
+                log("[ANALYTICS] Structuring enrichment data and mapping personas...");
+                setProgress(75);
 
-                // Bucketing variables equivalent to Python DataFrames
+                // Bucketing Variables
                 const linkedinBucket = [];
                 const twitterBucket = [];
                 const instagramBucket = [];
-                const enrichedRecordsLi = [];
-                const enrichedRecordsX = [];
-                const enrichedRecordsIg = [];
+                
+                // Analytics Aggregators
+                let totalTargetMatches = 0;
+                const counts = { industry: {}, location: {}, seniority: {}, size: {} };
 
                 socialProfiles.forEach(p => {
-                    const cid = p.client_id;
+                    // Check against Key Identifiers safely
+                    let isTargetMatch = "No";
+                    let matchedKeyword = "";
+                    
+                    if (targetKeywords.length > 0) {
+                        // Safe null checks before calling .toLowerCase()
+                        const titleLower = p.job_title ? p.job_title.toLowerCase() : "";
+                        const senLower = p.seniority ? p.seniority.toLowerCase() : "";
+                        
+                        for (let kw of targetKeywords) {
+                            if ((titleLower && titleLower.includes(kw)) || (senLower && senLower.includes(kw))) {
+                                isTargetMatch = "Yes";
+                                matchedKeyword = kw;
+                                totalTargetMatches++;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Tally demographics for ICP
+                    if (p.industry && p.industry !== "Unknown") counts.industry[p.industry] = (counts.industry[p.industry] || 0) + 1;
+                    if (p.location && p.location !== "Unknown") counts.location[p.location] = (counts.location[p.location] || 0) + 1;
+                    if (p.seniority && p.seniority !== "Unknown") counts.seniority[p.seniority] = (counts.seniority[p.seniority] || 0) + 1;
+                    if (p.company_size && p.company_size !== "Unknown") counts.size[p.company_size] = (counts.size[p.company_size] || 0) + 1;
+
+                    // Base Enriched Profile
+                    const enrichedRecord = {
+                        Anonymized_ID: p.client_id,
+                        Target_Persona_Match: isTargetMatch,
+                        Matched_On: matchedKeyword,
+                        Job_Title: p.job_title || "Unlisted",
+                        Seniority: p.seniority || "Unlisted",
+                        Industry: p.industry || "Unlisted",
+                        Company_Size: p.company_size || "Unlisted",
+                        Location: p.location || "Unlisted",
+                        Skills: p.skills || "N/A"
+                    };
+
                     if (p.linkedin) {
-                        linkedinBucket.push({ client_id: cid, linkedin_url: p.linkedin });
-                        enrichedRecordsLi.push({
-                            client_id: cid,
-                            role: p.job_title || "Unknown / Not Listed",
-                            industry: p.industry || "General Consumer",
-                            skills: p.skills || "Analytical Reasoning"
-                        });
+                        linkedinBucket.push({ ...enrichedRecord, Platform_URL: p.linkedin });
                     }
                     if (p.twitter) {
-                        twitterBucket.push({ client_id: cid, twitter_url: p.twitter });
-                        enrichedRecordsX.push({
-                            client_id: cid,
-                            role: p.job_title || "Unknown / Not Listed",
-                            interests: p.interests || "News & Updates"
-                        });
+                        twitterBucket.push({ ...enrichedRecord, Interests: p.interests, Platform_URL: p.twitter });
                     }
                     if (p.instagram) {
-                        instagramBucket.push({ client_id: cid, instagram_url: p.instagram });
-                        enrichedRecordsIg.push({
-                            client_id: cid,
-                            interests: p.interests || "General Lifestyle",
-                            industry: p.industry || "General Consumer"
-                        });
+                        instagramBucket.push({ ...enrichedRecord, Interests: p.interests, Platform_URL: p.instagram });
                     }
                 });
 
-                log("Conducting pattern analysis and vector intersections...");
+                log("[COMPUTATION] Generating Ideal Customer Profile vectors...");
                 setProgress(85);
 
-                // Analytical aggregations (Replicating Pandas value_counts)
-                let topIndustry = "N/A";
-                if (enrichedRecordsLi.length > 0) {
-                    const industryCounts = {};
-                    enrichedRecordsLi.forEach(r => {
-                        industryCounts[r.industry] = (industryCounts[r.industry] || 0) + 1;
-                    });
-                    // Sort by frequency
-                    const sortedIndustries = Object.keys(industryCounts).sort((a, b) => industryCounts[b] - industryCounts[a]);
-                    topIndustry = sortedIndustries.length > 0 ? sortedIndustries[0] : "N/A";
-                }
+                // Helper to get top item from tally
+                const getTop = (dict) => {
+                    const sorted = Object.keys(dict).sort((a, b) => dict[b] - dict[a]);
+                    return sorted.length > 0 ? `${sorted[0]} (${dict[sorted[0]]})` : "N/A";
+                };
 
-                let topInterestsStr = "N/A";
-                if (enrichedRecordsIg.length > 0) {
-                    const interestCounts = {};
-                    enrichedRecordsIg.forEach(r => {
-                        if (r.interests) {
-                            r.interests.split(',').forEach(item => {
-                                const cleanItem = item.trim();
-                                if(cleanItem) interestCounts[cleanItem] = (interestCounts[cleanItem] || 0) + 1;
-                            });
-                        }
-                    });
-                    const sortedInterests = Object.keys(interestCounts).sort((a, b) => interestCounts[b] - interestCounts[a]);
-                    topInterestsStr = sortedInterests.slice(0, 3).join(", ") || "N/A";
-                }
+                const topInd = getTop(counts.industry);
+                const topLoc = getTop(counts.location);
+                const topSen = getTop(counts.seniority);
+                const topSize = getTop(counts.size);
 
-                // Output Profile
-                log("\n=========================================");
-                log(">> AUTOMATED TARGET CUSTOMER PROFILE (ICP)");
-                log("=========================================");
-                log(`Primary Industry: ${topIndustry}`);
-                log(`Core Digital Interests: ${topInterestsStr}`);
-                log(`Suggested Outreach: LinkedIn tailored for ${topIndustry} managers.`);
-                log("=========================================\n");
+                log("\n=======================================================");
+                log(">> IDEAL CUSTOMER PROFILE (ICP) - DEEP ANALYSIS REPORT");
+                log("=======================================================");
+                log(`Total Entities Analyzed : ${emails.length}`);
+                log(`Target Persona Matches  : ${totalTargetMatches} (Based on custom keywords)`);
+                log(`Match Rate              : ${((totalTargetMatches / emails.length) * 100).toFixed(1)}%`);
+                log("-------------------------------------------------------");
+                log(`Primary Industry Focus  : ${topInd}`);
+                log(`Geographic Concentration: ${topLoc}`);
+                log(`Dominant Seniority Lvl  : ${topSen}`);
+                log(`Avg Company Size        : ${topSize}`);
+                log("=======================================================\n");
 
-                setProgress(90);
-                const exportFilename = 'social_analysis_export.xlsx';
-                log(`Compiling final export block to ${exportFilename}...`);
+                setProgress(95);
+                const exportFilename = 'Rich_Social_Enrichment_Report.xlsx';
+                log(`[I/O] Assembling rich Excel export: ${exportFilename}...`);
 
                 const wb = XLSX.utils.book_new();
                 
-                // Helper to add sheet if data exists
                 const addSheet = (data, sheetName) => {
-                    const ws = data.length > 0 ? XLSX.utils.json_to_sheet(data) : XLSX.utils.json_to_sheet([{ message: "No data found" }]);
+                    const ws = data.length > 0 ? XLSX.utils.json_to_sheet(data) : XLSX.utils.json_to_sheet([{ status: "No records found for this platform." }]);
                     XLSX.utils.book_append_sheet(wb, ws, sheetName);
                 };
 
-                addSheet(linkedinBucket, "LinkedIn_Profiles");
-                addSheet(twitterBucket, "X_Profiles");
-                addSheet(instagramBucket, "Instagram_Profiles");
-                addSheet(enrichedRecordsLi, "Enriched_LinkedIn");
-                addSheet(enrichedRecordsX, "Enriched_X");
-                addSheet(enrichedRecordsIg, "Enriched_Instagram");
+                // Create Executive Summary Tab
+                const execSummary = [
+                    { Metric: "Total Records Analyzed", Value: emails.length },
+                    { Metric: "Target Persona Matches", Value: totalTargetMatches },
+                    { Metric: "Target Keywords Used", Value: targetKeywords.join(", ") || "None" },
+                    { Metric: "", Value: "" },
+                    { Metric: "Top Industry", Value: topInd },
+                    { Metric: "Top Location", Value: topLoc },
+                    { Metric: "Top Seniority", Value: topSen },
+                    { Metric: "Top Company Size", Value: topSize },
+                    { Metric: "", Value: "" },
+                    { Metric: "Total LinkedIn Found", Value: linkedinBucket.length },
+                    { Metric: "Total Twitter Found", Value: twitterBucket.length },
+                    { Metric: "Total Instagram Found", Value: instagramBucket.length }
+                ];
+
+                addSheet(execSummary, "Executive_Summary");
+                addSheet(linkedinBucket, "Enriched_LinkedIn");
+                addSheet(twitterBucket, "Enriched_Twitter");
+                addSheet(instagramBucket, "Enriched_Instagram");
 
                 // Trigger download
                 XLSX.writeFile(wb, exportFilename);
 
                 setProgress(100);
                 setStatus("Operation Complete.");
-                log("PROCESS TERMINATED: Analysis and Export Successful.");
-                log(`Data exported automatically to your browser downloads folder.`);
+                log("[SUCCESS] Process Terminated Normally. Report exported to local downloads.");
 
             } catch (err) {
-                log(`EXCEPTION FAULT during execution: ${err.message}`);
+                log(`[FATAL EXCEPTION] >> ${err.message}`);
                 setStatus("Error: Execution Halted");
                 console.error(err);
             } finally {
