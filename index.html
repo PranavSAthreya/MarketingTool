@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forward Observer GUI v1.0</title>
+    
+    <!-- PapaParse for parsing CSVs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS for writing Excel (XLSX) files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --win-bg: #d4d0c8;
+            --win-border-light: #ffffff;
+            --win-border-dark: #808080;
+            --win-border-darker: #404040;
+            --win-blue: #000080;
+            --win-text: #000000;
+        }
+
+        body {
+            background-color: #008080; /* Classic teal desktop background */
+            font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Recreating the 3D GUI borders */
+        .win95-window {
+            background-color: var(--win-bg);
+            border-top: 2px solid var(--win-border-light);
+            border-left: 2px solid var(--win-border-light);
+            border-right: 2px solid var(--win-border-darker);
+            border-bottom: 2px solid var(--win-border-darker);
+            width: 750px;
+            box-shadow: 1px 1px 0px 0px var(--win-border-dark) inset, -1px -1px 0px 0px var(--win-border-dark) inset;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .title-bar-controls {
+            display: flex;
+            gap: 2px;
+        }
+
+        .title-bar-btn {
+            background-color: var(--win-bg);
+            border-top: 1px solid var(--win-border-light);
+            border-left: 1px solid var(--win-border-light);
+            border-right: 1px solid var(--win-border-darker);
+            border-bottom: 1px solid var(--win-border-darker);
+            width: 16px;
+            height: 14px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            color: black;
+            box-shadow: 1px 1px 0px 0px var(--win-border-dark) inset, -1px -1px 0px 0px var(--win-border-dark) inset;
+        }
+
+        .menu-bar {
+            display: flex;
+            padding: 2px 5px;
+            gap: 10px;
+            border-bottom: 1px solid var(--win-border-dark);
+            box-shadow: 0 1px 0 var(--win-border-light);
+            margin-bottom: 5px;
+        }
+
+        .menu-item {
+            cursor: pointer;
+        }
+        .menu-item span { text-decoration: underline; }
+
+        .content {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .group-box {
+            border-top: 2px solid var(--win-border-dark);
+            border-left: 2px solid var(--win-border-dark);
+            border-right: 2px solid var(--win-border-light);
+            border-bottom: 2px solid var(--win-border-light);
+            padding: 15px 10px 10px 10px;
+            position: relative;
+            margin-top: 5px;
+        }
+
+        .group-box-title {
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            background-color: var(--win-bg);
+            padding: 0 4px;
+            color: var(--win-text);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .win95-sunken {
+            border-top: 2px solid var(--win-border-dark);
+            border-left: 2px solid var(--win-border-dark);
+            border-right: 2px solid var(--win-border-light);
+            border-bottom: 2px solid var(--win-border-light);
+            background-color: white;
+            padding: 4px;
+            box-shadow: inset 1px 1px 0px 0px black, inset -1px -1px 0px 0px var(--win-bg);
+        }
+
+        .win95-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 12px;
+            background: transparent;
+        }
+        
+        .placeholder-text { color: #808080; }
+
+        .win95-button {
+            background-color: var(--win-bg);
+            border-top: 2px solid var(--win-border-light);
+            border-left: 2px solid var(--win-border-light);
+            border-right: 2px solid var(--win-border-darker);
+            border-bottom: 2px solid var(--win-border-darker);
+            padding: 4px 15px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: inset 1px 1px 0px 0px var(--win-bg), inset -1px -1px 0px 0px var(--win-border-dark);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .win95-button:active {
+            border-top: 2px solid var(--win-border-darker);
+            border-left: 2px solid var(--win-border-darker);
+            border-right: 2px solid var(--win-border-light);
+            border-bottom: 2px solid var(--win-border-light);
+            box-shadow: inset 1px 1px 0px 0px var(--win-border-dark);
+            padding: 5px 14px 3px 16px; /* Offset text on click */
+        }
+
+        .win95-button:disabled {
+            color: #808080;
+            text-shadow: 1px 1px 0px white;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            resize: none;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+            color: #808080;
+            font-style: italic;
+        }
+
+        .progress-container {
+            height: 18px;
+            width: 100%;
+            margin-top: 5px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--win-blue);
+        }
+
+        .status-bar-container {
+            display: flex;
+            gap: 2px;
+            padding: 2px;
+            margin-top: 5px;
+        }
+
+        .status-pane {
+            padding: 2px 4px;
+            color: var(--win-border-dark);
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-pane.fixed {
+            flex-grow: 0;
+            width: 100px;
+            text-align: center;
+        }
+        
+        /* Hide default file input */
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="win95-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <span>🌐 Forward Observer GUI v1.0</span>
+            <div class="title-bar-controls">
+                <div class="title-bar-btn">_</div>
+                <div class="title-bar-btn">□</div>
+                <div class="title-bar-btn">×</div>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <div class="menu-item"><span>F</span>ile</div>
+            <div class="menu-item"><span>E</span>dit</div>
+            <div class="menu-item"><span>V</span>iew</div>
+            <div class="menu-item"><span>H</span>elp</div>
+        </div>
+
+        <div class="content">
+            <!-- Configuration -->
+            <div class="group-box">
+                <span class="group-box-title">Configuration</span>
+                <div class="row">
+                    <span>⚷ API Key:</span>
+                    <div class="win95-sunken" style="flex-grow: 1;">
+                        <input type="text" id="apiKeyInput" class="win95-input placeholder-text" value="People Data Labs Key (Optional)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Source -->
+            <div class="group-box">
+                <span class="group-box-title">Data Source</span>
+                <div class="row">
+                    <button class="win95-button" onclick="document.getElementById('csvFileInput').click()">
+                        ⇧ Browse CSV...
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv">
+                    <div class="win95-sunken" style="flex-grow: 1; background-color: var(--win-bg);">
+                        <input type="text" id="fileDisplay" class="win95-input" value="No file selected. Please choose a file." readonly tabindex="-1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Run Button -->
+            <div class="row" style="margin: 5px 0;">
+                <button class="win95-button" id="runBtn" onclick="startAnalysis()">
+                    ▶ Run Analysis
+                </button>
+            </div>
+
+            <!-- Terminal Output -->
+            <div class="group-box" style="flex-grow: 1; padding-bottom: 15px;">
+                <span class="group-box-title">Terminal Output</span>
+                <div class="win95-sunken" style="height: 200px; padding: 0;">
+                    <textarea id="terminalLog" class="win95-input" readonly>Ready. Waiting for input...</textarea>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <span id="progressText">Status: 0%</span>
+                    <div class="win95-sunken progress-container" style="padding: 1px;">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar-container">
+            <div class="win95-sunken status-pane" id="statusLeft" style="background-color: var(--win-bg);">Ready</div>
+            <div class="win95-sunken status-pane fixed" id="statusRight" style="background-color: var(--win-bg);">0 bytes</div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let selectedFile = null;
+        let isFirstLog = true;
+        let currentProgress = 0;
+
+        // DOM Elements
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const fileInput = document.getElementById('csvFileInput');
+        const fileDisplay = document.getElementById('fileDisplay');
+        const terminalLog = document.getElementById('terminalLog');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const statusLeft = document.getElementById('statusLeft');
+        const statusRight = document.getElementById('statusRight');
+        const runBtn = document.getElementById('runBtn');
+
+        // Placeholder logic for API Input
+        apiKeyInput.addEventListener('focus', function() {
+            if (this.value === 'People Data Labs Key (Optional)') {
+                this.value = '';
+                this.classList.remove('placeholder-text');
+                this.type = 'password';
+            }
+        });
+
+        apiKeyInput.addEventListener('blur', function() {
+            if (this.value === '') {
+                this.type = 'text';
+                this.value = 'People Data Labs Key (Optional)';
+                this.classList.add('placeholder-text');
+            }
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                fileDisplay.value = selectedFile.name;
+                
+                // Format bytes to readable size
+                let sizeStr = selectedFile.size.toLocaleString() + " bytes";
+                statusRight.innerText = sizeStr;
+                
+                clearLog();
+                log(`Selected file: ${selectedFile.name}`);
+                setProgress(5);
+                setStatus("File loaded. Ready for analysis.");
+            }
+        });
+
+        // UI Helper Functions
+        function log(message) {
+            if (isFirstLog) {
+                terminalLog.value = '';
+                terminalLog.style.color = '#000';
+                terminalLog.style.fontStyle = 'normal';
+                isFirstLog = false;
+            }
+            terminalLog.value += message + '\n';
+            terminalLog.scrollTop = terminalLog.scrollHeight; // Auto-scroll
+        }
+
+        function clearLog() {
+            terminalLog.value = '';
+            terminalLog.style.color = '#000';
+            terminalLog.style.fontStyle = 'normal';
+            isFirstLog = false;
+        }
+
+        function setProgress(percent) {
+            currentProgress = percent;
+            progressText.innerText = `Status: ${percent}%`;
+            progressBar.style.width = `${percent}%`;
+        }
+
+        function setStatus(text) {
+            statusLeft.innerText = text;
+        }
+
+        async function hashEmailSHA256(email) {
+            if (!email || typeof email !== 'string') return null;
+            const cleaned = email.trim().toLowerCase();
+            const msgBuffer = new TextEncoder().encode(cleaned);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function lookupSocials(email, anonymMap, apiKey) {
+            const clientId = anonymMap[email] || "Unknown_Client";
+            const hashedEmail = await hashEmailSHA256(email);
+            
+            const genericProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'mail.com'];
+            const domain = email.includes('@') ? email.split('@')[1].toLowerCase() : "unknown.com";
+            const companyName = domain.split('.')[0];
+            const isGeneric = genericProviders.includes(domain);
+
+            // Simulation Fallback (Always runs on Web if no API key)
+            if (!apiKey || apiKey === 'People Data Labs Key (Optional)') {
+                const linkedinUrl = isGeneric ? null : `https://www.linkedin.com/company/${companyName}`;
+                const twitterUrl = isGeneric ? null : `https://twitter.com/${companyName}`;
+                const instagramUrl = isGeneric ? `https://instagram.com/user_${clientId.toLowerCase()}` : `https://instagram.com/${companyName}_brand`;
+
+                return {
+                    client_id: clientId,
+                    email_hash: hashedEmail,
+                    linkedin: linkedinUrl,
+                    twitter: twitterUrl,
+                    instagram: instagramUrl,
+                    job_title: isGeneric ? "Individual Contributor" : "Executive",
+                    industry: isGeneric ? "Consumer Goods" : `${companyName.charAt(0).toUpperCase() + companyName.slice(1)} Technology`,
+                    skills: isGeneric ? "Photography, Travel, Lifestyle" : "Leadership, Strategy, B2B Sales",
+                    interests: isGeneric ? "Gadgets, Outdoors" : "Startups, Investing, SaaS",
+                    status: "simulated_local_analysis"
+                };
+            }
+
+            // Real API Execution (Warning: May face CORS limits in browser)
+            const url = `https://api.peopledatalabs.com/v5/person/enrich?email_hash=${hashedEmail}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept-Encoding': 'gzip',
+                        'X-Api-Key': apiKey
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const json = await response.json();
+                const data = json.data || {};
+
+                if (Object.keys(data).length === 0) {
+                    return { client_id: clientId, status: "No profile found" };
+                }
+
+                const jobHistory = data.experience || [];
+                const jobTitle = jobHistory.length > 0 && jobHistory[0].title ? jobHistory[0].title.name : null;
+                const skillsList = data.skills ? data.skills.slice(0, 3) : [];
+                const interestsList = data.interests ? data.interests.slice(0, 3) : [];
+
+                return {
+                    client_id: clientId,
+                    linkedin: data.linkedin_url || null,
+                    twitter: data.twitter_url || null,
+                    instagram: data.facebook_url || null, // Using FB as IG fallback mapping as per python script
+                    job_title: jobTitle,
+                    industry: data.industry || null,
+                    skills: skillsList.length > 0 ? skillsList.join(", ") : null,
+                    interests: interestsList.length > 0 ? interestsList.join(", ") : "General Professional",
+                    status: "success"
+                };
+            } catch (e) {
+                return { client_id: clientId, status: `API Request failed: ${e.message}` };
+            }
+        }
+
+        // Helper function to read CSV synchronously via Promise
+        function parseCSVFile(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) { resolve(results.data); },
+                    error: function(err) { reject(err); }
+                });
+            });
+        }
+
+        async function startAnalysis() {
+            if (!selectedFile) {
+                alert("Please select a CSV file first.");
+                return;
+            }
+
+            runBtn.disabled = true;
+            clearLog();
+            log("Initializing browser-side background process...");
+            setProgress(10);
+            setStatus("Running analysis...");
+
+            let apiKey = apiKeyInput.value.trim();
+            if (apiKey === "People Data Labs Key (Optional)" || !apiKey) {
+                apiKey = null;
+                log("Warning: No API Key provided. Running in Local Simulation Mode.");
+            } else {
+                log("Notice: Attempting live API request. This may fail if CORS prevents browser requests.");
+            }
+
+            try {
+                log("Reading CSV target data...");
+                const parsedData = await parseCSVFile(selectedFile);
+                setProgress(15);
+
+                if (parsedData.length === 0) {
+                    throw new Error("CSV file is empty.");
+                }
+
+                // Robust column detection
+                const columns = Object.keys(parsedData[0]);
+                const colsLower = columns.map(c => c.toLowerCase());
+                
+                let targetCol = null;
+                if (colsLower.includes('email')) {
+                    targetCol = columns[colsLower.indexOf('email')];
+                } else {
+                    let matchingCols = columns.filter(c => c.toLowerCase().includes('email') && !c.toLowerCase().includes('manager'));
+                    if (matchingCols.length === 0) matchingCols = columns.filter(c => c.toLowerCase().includes('email'));
+                    targetCol = matchingCols.length > 0 ? matchingCols[0] : null;
+                }
+
+                if (!targetCol) {
+                    log("FATAL ERROR: Could not find 'email' column. Aborting.");
+                    setStatus("Error: Validation Failed");
+                    runBtn.disabled = false;
+                    return;
+                }
+
+                // Extract unique emails
+                const rawEmails = parsedData.map(row => row[targetCol]).filter(e => e && e.trim() !== '');
+                const emails = [...new Set(rawEmails)];
+                
+                log(`Successfully localized ${emails.length} unique email addresses.`);
+                setProgress(20);
+
+                // Create anonymity map
+                const anonymMap = {};
+                emails.forEach((email, idx) => {
+                    anonymMap[email] = `Client_${idx + 1}`;
+                });
+                log("Anonymity mask generated. Establishing secure handles.");
+
+                // Lookup phase
+                log("Connecting to remote social databanks...");
+                const socialProfiles = [];
+                for (let i = 0; i < emails.length; i++) {
+                    const profile = await lookupSocials(emails[i], anonymMap, apiKey);
+                    socialProfiles.push(profile);
+                    
+                    // Update progress sequentially
+                    const stepProg = Math.floor(20 + ((i + 1) / emails.length) * 55);
+                    setProgress(stepProg);
+                }
+
+                log("Sorting and classifying retrieved social entities...");
+                setProgress(80);
+
+                // Bucketing variables equivalent to Python DataFrames
+                const linkedinBucket = [];
+                const twitterBucket = [];
+                const instagramBucket = [];
+                const enrichedRecordsLi = [];
+                const enrichedRecordsX = [];
+                const enrichedRecordsIg = [];
+
+                socialProfiles.forEach(p => {
+                    const cid = p.client_id;
+                    if (p.linkedin) {
+                        linkedinBucket.push({ client_id: cid, linkedin_url: p.linkedin });
+                        enrichedRecordsLi.push({
+                            client_id: cid,
+                            role: p.job_title || "Unknown / Not Listed",
+                            industry: p.industry || "General Consumer",
+                            skills: p.skills || "Analytical Reasoning"
+                        });
+                    }
+                    if (p.twitter) {
+                        twitterBucket.push({ client_id: cid, twitter_url: p.twitter });
+                        enrichedRecordsX.push({
+                            client_id: cid,
+                            role: p.job_title || "Unknown / Not Listed",
+                            interests: p.interests || "News & Updates"
+                        });
+                    }
+                    if (p.instagram) {
+                        instagramBucket.push({ client_id: cid, instagram_url: p.instagram });
+                        enrichedRecordsIg.push({
+                            client_id: cid,
+                            interests: p.interests || "General Lifestyle",
+                            industry: p.industry || "General Consumer"
+                        });
+                    }
+                });
+
+                log("Conducting pattern analysis and vector intersections...");
+                setProgress(85);
+
+                // Analytical aggregations (Replicating Pandas value_counts)
+                let topIndustry = "N/A";
+                if (enrichedRecordsLi.length > 0) {
+                    const industryCounts = {};
+                    enrichedRecordsLi.forEach(r => {
+                        industryCounts[r.industry] = (industryCounts[r.industry] || 0) + 1;
+                    });
+                    // Sort by frequency
+                    const sortedIndustries = Object.keys(industryCounts).sort((a, b) => industryCounts[b] - industryCounts[a]);
+                    topIndustry = sortedIndustries.length > 0 ? sortedIndustries[0] : "N/A";
+                }
+
+                let topInterestsStr = "N/A";
+                if (enrichedRecordsIg.length > 0) {
+                    const interestCounts = {};
+                    enrichedRecordsIg.forEach(r => {
+                        if (r.interests) {
+                            r.interests.split(',').forEach(item => {
+                                const cleanItem = item.trim();
+                                if(cleanItem) interestCounts[cleanItem] = (interestCounts[cleanItem] || 0) + 1;
+                            });
+                        }
+                    });
+                    const sortedInterests = Object.keys(interestCounts).sort((a, b) => interestCounts[b] - interestCounts[a]);
+                    topInterestsStr = sortedInterests.slice(0, 3).join(", ") || "N/A";
+                }
+
+                // Output Profile
+                log("\n=========================================");
+                log(">> AUTOMATED TARGET CUSTOMER PROFILE (ICP)");
+                log("=========================================");
+                log(`Primary Industry: ${topIndustry}`);
+                log(`Core Digital Interests: ${topInterestsStr}`);
+                log(`Suggested Outreach: LinkedIn tailored for ${topIndustry} managers.`);
+                log("=========================================\n");
+
+                setProgress(90);
+                const exportFilename = 'social_analysis_export.xlsx';
+                log(`Compiling final export block to ${exportFilename}...`);
+
+                const wb = XLSX.utils.book_new();
+                
+                // Helper to add sheet if data exists
+                const addSheet = (data, sheetName) => {
+                    const ws = data.length > 0 ? XLSX.utils.json_to_sheet(data) : XLSX.utils.json_to_sheet([{ message: "No data found" }]);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                };
+
+                addSheet(linkedinBucket, "LinkedIn_Profiles");
+                addSheet(twitterBucket, "X_Profiles");
+                addSheet(instagramBucket, "Instagram_Profiles");
+                addSheet(enrichedRecordsLi, "Enriched_LinkedIn");
+                addSheet(enrichedRecordsX, "Enriched_X");
+                addSheet(enrichedRecordsIg, "Enriched_Instagram");
+
+                // Trigger download
+                XLSX.writeFile(wb, exportFilename);
+
+                setProgress(100);
+                setStatus("Operation Complete.");
+                log("PROCESS TERMINATED: Analysis and Export Successful.");
+                log(`Data exported automatically to your browser downloads folder.`);
+
+            } catch (err) {
+                log(`EXCEPTION FAULT during execution: ${err.message}`);
+                setStatus("Error: Execution Halted");
+                console.error(err);
+            } finally {
+                runBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
